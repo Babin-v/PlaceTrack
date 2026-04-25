@@ -6,9 +6,9 @@ async function initFaculty() {
   if (!currentUser || currentUser.role !== 'faculty') { logout(); return; }
   document.getElementById('uname').textContent = currentUser.name;
   document.getElementById('av').textContent = currentUser.name[0];
-  await Promise.all([loadStats(), loadStudents(), loadAssignments(), loadSubmissions()]);
+  await Promise.all([loadStats(), loadStudents(), loadAssignments(), loadSubmissions(), loadTeam()]);
   loadOverviewCharts();
-  pollUnread();
+  initSocket(); // Real-time
 }
 
 // ── Stats ──
@@ -130,6 +130,53 @@ document.getElementById('student-form')?.addEventListener('submit', async(e)=>{
     loadStudents();
   } catch (err) {
     toast(err.message || 'Failed to save student', 'error');
+  } finally {
+    btn.disabled = false; btn.textContent = originalText;
+  }
+});
+
+// ── Team / Faculty ──
+async function loadTeam() {
+  const team = await api('/api/faculty');
+  const el = document.getElementById('team-body');
+  if(!el) return;
+  el.innerHTML = team.map(f => `
+    <tr>
+      <td><strong>${f.name}</strong></td>
+      <td>${f.email}</td>
+      <td><span class="badge badge-primary">Faculty</span></td>
+      <td>${fmtDate(f.created_at)}</td>
+    </tr>`).join('');
+}
+
+function openFacultyModal() {
+  document.getElementById('f-name').value = '';
+  document.getElementById('f-email').value = '';
+  document.getElementById('f-pwd').value = '';
+  openModal('modal-faculty');
+}
+
+document.getElementById('faculty-form')?.addEventListener('submit', async(e) => {
+  e.preventDefault();
+  const btn = e.target.querySelector('button[type="submit"]');
+  const originalText = btn.textContent;
+  btn.disabled = true; btn.textContent = 'Saving…';
+  
+  try {
+    const res = await api('/api/faculty', {
+      method: 'POST',
+      body: JSON.stringify({
+        name: document.getElementById('f-name').value,
+        email: document.getElementById('f-email').value,
+        password: document.getElementById('f-pwd').value
+      })
+    });
+    if(res.error) throw new Error(res.error);
+    toast('Faculty added successfully!');
+    closeModal('modal-faculty');
+    loadTeam();
+  } catch(err) {
+    toast(err.message, 'error');
   } finally {
     btn.disabled = false; btn.textContent = originalText;
   }

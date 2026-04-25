@@ -139,6 +139,14 @@ async function bootstrap() {
   app.get('/api/faculty', (req, res) =>
     res.json(db.prepare(`SELECT id,name,email FROM users WHERE role='faculty'`).all()));
 
+  app.post('/api/faculty', (req, res) => {
+    const { name, email, password } = req.body;
+    try {
+      const r = db.prepare(`INSERT INTO users (name,email,password,role) VALUES (?,?,?, 'faculty')`).run(name, email, bcrypt.hashSync(password || 'faculty123', 10));
+      res.json({ id: r.lastInsertRowid });
+    } catch(e) { res.status(400).json({ error: 'Email already exists' }); }
+  });
+
   // ── ASSIGNMENTS ────────────────────────────────────────────────────────────
   app.get('/api/assignments', (req, res) =>
     res.json(db.prepare(`SELECT a.*,u.name as creator_name FROM assignments a LEFT JOIN users u ON a.created_by=u.id ORDER BY a.created_at DESC`).all()));

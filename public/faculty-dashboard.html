@@ -26,6 +26,7 @@
     <a class="nav-item" onclick="showSection('assignments')" href="#"><span>📋</span> Assignments</a>
     <a class="nav-item" onclick="showSection('submissions')" href="#"><span>📤</span> Submissions</a>
     <a class="nav-item" onclick="showSection('progress')" href="#"><span>📈</span> Progress Charts</a>
+    <a class="nav-item" onclick="showSection('team')" href="#"><span>🏢</span> Faculty Team</a>
     <div class="nav-section">Communication</div>
     <a class="nav-item" onclick="showSection('chat')" href="#" id="chat-nav"><span>💬</span> Chat <span class="badge" id="chat-badge" style="display:none">0</span></a>
     <div class="nav-section">Reports</div>
@@ -124,8 +125,19 @@
     </div>
     <div class="chat-window" id="chat-window-faculty">
       <div class="chat-empty"><div style="font-size:48px">💬</div><p>Select a student to start chatting</p></div>
-    </div>
   </div>
+</div>
+
+<!-- TEAM/FACULTY -->
+<div class="section" id="sec-team">
+  <div class="page-header" style="display:flex;justify-content:space-between;align-items:flex-start">
+    <div><h1>Faculty Team</h1><p>Manage faculty accounts</p></div>
+    <button class="btn btn-primary" onclick="openFacultyModal()">+ Add Faculty</button>
+  </div>
+  <div class="glass-card table-wrap"><table>
+    <thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Created</th></tr></thead>
+    <tbody id="team-body"></tbody>
+  </table></div>
 </div>
 
 </main></div>
@@ -202,6 +214,18 @@
   <div class="form-group"><label>Notes / Feedback</label><textarea class="form-control" id="g-notes" rows="3"></textarea></div>
   <div class="modal-footer"><button class="btn btn-ghost" onclick="closeModal('modal-grade')">Cancel</button>
   <button class="btn btn-success" onclick="saveGrade()">✓ Save Grade</button></div>
+</div></div>
+
+<div class="modal-overlay" id="modal-faculty">
+<div class="modal">
+  <div class="modal-header"><h3>Add Faculty</h3><button class="modal-close" onclick="closeModal('modal-faculty')">✕</button></div>
+  <form id="faculty-form">
+    <div class="form-group"><label>Full Name*</label><input class="form-control" id="f-name" required/></div>
+    <div class="form-group"><label>Email*</label><input class="form-control" id="f-email" type="email" required/></div>
+    <div class="form-group"><label>Password (default: faculty123)</label><input class="form-control" id="f-pwd" type="password" placeholder="Leave blank for default"/></div>
+    <div class="modal-footer"><button type="button" class="btn btn-ghost" onclick="closeModal('modal-faculty')">Cancel</button>
+    <button type="submit" class="btn btn-primary">Save Faculty</button></div>
+  </form>
 </div></div>
 
 <div class="toast-container" id="toasts"></div>
