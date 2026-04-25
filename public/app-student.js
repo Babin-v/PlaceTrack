@@ -11,7 +11,8 @@ async function initStudent() {
   await Promise.all([loadMyData(), loadUpcoming()]);
   loadMyCharts();
   loadCodingStats();
-  pollUnread();
+  initSocket(); // Real-time chat
+  checkDeadlines();
 }
 
 async function loadMyData() {
@@ -34,6 +35,40 @@ async function loadMyData() {
     </div>`).join('');
 
   renderMyAssignments();
+}
+
+function checkDeadlines() {
+  const now = new Date();
+  const alertsEl = document.getElementById('deadline-alerts');
+  if(!alertsEl) return;
+
+  const urgent = myAssignments.filter(a => {
+    if(!a.due_date) return false;
+    const sub = getSubForAssign(a.id);
+    if(sub && sub.status !== 'pending') return false;
+    
+    const due = new Date(a.due_date);
+    const diff = due - now;
+    const hours = diff / (1000 * 60 * 60);
+    return hours > 0 && hours <= 24; // Within 24 hours
+  });
+
+  if (urgent.length > 0) {
+    alertsEl.innerHTML = urgent.map(a => `
+      <div class="glass-card" style="border-left:5px solid var(--warning);background:rgba(245,158,11,0.05);display:flex;align-items:center;gap:15px;padding:15px">
+        <div style="font-size:24px">⚠️</div>
+        <div style="flex:1">
+          <strong style="color:var(--warning)">Deadline Alert!</strong>
+          <p style="font-size:13px;margin-top:2px"><strong>${a.title}</strong> is due in less than 24 hours! Submit it before ${fmtDate(a.due_date)}.</p>
+        </div>
+        <button class="btn btn-primary btn-sm" onclick="showSection('assignments')">Submit Now</button>
+      </div>`).join('');
+      
+    // Also show a toast for the most urgent one
+    toast(`Alert: ${urgent[0].title} is due tomorrow!`, 'error');
+  } else {
+    alertsEl.innerHTML = '';
+  }
 }
 
 function filterMyAssign(f, el) {
