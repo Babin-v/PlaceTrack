@@ -7,6 +7,11 @@ const path = require('path');
 const DB_DIR = process.env.RENDER_DISK_PATH || __dirname;
 const DB_PATH = path.join(DB_DIR, 'placement.db');
 
+// Ensure the directory exists (important for Render persistent disks)
+if (!fs.existsSync(DB_DIR)) {
+  fs.mkdirSync(DB_DIR, { recursive: true });
+}
+
 async function createDb() {
   const SQL = await initSqlJs();
   let sqljs;
