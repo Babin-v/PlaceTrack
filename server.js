@@ -70,6 +70,7 @@ async function bootstrap() {
     const fp = bcrypt.hashSync('faculty123', 10);
     const sp = bcrypt.hashSync('student123', 10);
     db.prepare(`INSERT INTO users (name,email,password,role) VALUES (?,?,?,'faculty')`).run('Dr. Rajesh Kumar','faculty@college.edu',fp);
+    db.prepare(`INSERT INTO users (name,email,password,role) VALUES (?,?,?,'faculty')`).run('Prof. Sarah Miller','sarah@college.edu',fp);
     const students = [
       ['Arjun Sharma','arjun@student.edu','2024-CSE-A','CS001','REG001','arjun_hr','tourist'],
       ['Priya Patel','priya@student.edu','2024-CSE-A','CS002','REG002','priya_codes','neal_wu'],
