@@ -1,6 +1,4 @@
 node_modules/
-placement.db
-placement.db-journal
 uploads/*
 !uploads/.gitkeep
 .DS_Store

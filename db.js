@@ -3,13 +3,20 @@ const initSqlJs = require('sql.js');
 const fs = require('fs');
 const path = require('path');
 
-// On Render, we use a persistent disk at /opt/render/project/src/data/
+// On Render, we use a persistent disk at /data/
+const REPO_DB = path.join(__dirname, 'placement.db');
 const DB_DIR = process.env.RENDER_DISK_PATH || __dirname;
 const DB_PATH = path.join(DB_DIR, 'placement.db');
 
-// Ensure the directory exists (important for Render persistent disks)
-if (!fs.existsSync(DB_DIR)) {
-  fs.mkdirSync(DB_DIR, { recursive: true });
+// Ensure the directory exists
+if (!fs.existsSync(DB_DIR)) fs.mkdirSync(DB_DIR, { recursive: true });
+
+// Sync Logic: If we have a DB in the repo but not on the disk (or it's a first deploy), copy it
+if (fs.existsSync(REPO_DB) && DB_PATH !== REPO_DB) {
+  // Only copy if it doesn't exist on the disk yet to prevent overwriting live data every deploy
+  if (!fs.existsSync(DB_PATH)) {
+    fs.copyFileSync(REPO_DB, DB_PATH);
+  }
 }
 
 async function createDb() {
@@ -17,6 +24,8 @@ async function createDb() {
   let sqljs;
   if (fs.existsSync(DB_PATH)) {
     sqljs = new SQL.Database(fs.readFileSync(DB_PATH));
+  } else if (fs.existsSync(REPO_DB)) {
+    sqljs = new SQL.Database(fs.readFileSync(REPO_DB));
   } else {
     sqljs = new SQL.Database();
   }
