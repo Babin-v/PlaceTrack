@@ -173,6 +173,13 @@ async function startRecording() {
     
     document.getElementById('voice-btn').style.color = 'var(--danger)';
     document.getElementById('voice-btn').classList.add('recording');
+
+    // Fail-safe: stop recording if mouse leaves button or window loses focus
+    const stopHandler = () => {
+      if (mediaRecorder && mediaRecorder.state === 'recording') stopRecording(activeChatUserId);
+      window.removeEventListener('mouseup', stopHandler);
+    };
+    window.addEventListener('mouseup', stopHandler);
   } catch (err) {
     toast('Microphone access denied', 'error');
   }

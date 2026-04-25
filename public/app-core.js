@@ -14,8 +14,14 @@ function logout() {
 }
 
 async function api(path, opts={}) {
-  const res = await fetch(API + path, { headers:{'Content-Type':'application/json'}, ...opts });
-  return res.json();
+  try {
+    const res = await fetch(API + path, { headers:{'Content-Type':'application/json'}, ...opts });
+    const data = await res.json();
+    if (!res.ok) return { error: data.error || `Server Error (${res.status})` };
+    return data;
+  } catch (e) {
+    return { error: 'Network connection failed' };
+  }
 }
 
 async function apiForm(path, formData) {

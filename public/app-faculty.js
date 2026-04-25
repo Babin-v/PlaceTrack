@@ -31,6 +31,12 @@ async function loadStats() {
 async function loadStudents() {
   allStudents = await api('/api/students');
   renderStudents(allStudents);
+  
+  // Populate batch filter
+  const batches = [...new Set(allStudents.map(s => s.batch).filter(Boolean))];
+  const bSel = document.getElementById('student-batch-filter');
+  if(bSel) bSel.innerHTML = '<option value="">All Batches</option>' + batches.map(b=>`<option value="${b}">${b}</option>`).join('');
+
   const sel = document.getElementById('prog-student');
   if(sel) sel.innerHTML = '<option value="">Select Student…</option>' +
     allStudents.map(s=>`<option value="${s.id}">${s.name} (${s.roll_no||s.batch})</option>`).join('');
@@ -55,7 +61,12 @@ function renderStudents(list) {
 
 function filterStudents() {
   const q = document.getElementById('student-search').value.toLowerCase();
-  renderStudents(allStudents.filter(s=>(s.name+s.email+s.roll_no+s.batch).toLowerCase().includes(q)));
+  const b = document.getElementById('student-batch-filter').value;
+  renderStudents(allStudents.filter(s=>{
+    const matchQ = (s.name+s.email+s.roll_no+s.batch).toLowerCase().includes(q);
+    const matchB = !b || s.batch === b;
+    return matchQ && matchB;
+  }));
 }
 
 function openStudentModal(s=null) {
@@ -88,22 +99,40 @@ async function deleteStudent(id) {
 
 document.getElementById('student-form')?.addEventListener('submit', async(e)=>{
   e.preventDefault();
-  const id = document.getElementById('s-id').value;
-  const body = {
-    name:document.getElementById('s-name').value,
-    email:document.getElementById('s-email').value,
-    roll_no:document.getElementById('s-roll').value,
-    reg_no:document.getElementById('s-reg').value,
-    phone:document.getElementById('s-phone')?.value || '',
-    batch:document.getElementById('s-batch').value,
-    password:document.getElementById('s-pwd').value,
-    hackerrank_username:document.getElementById('s-hr').value,
-    leetcode_username:document.getElementById('s-lc').value,
-  };
-  if(id) await api(`/api/students/${id}`,{method:'PUT',body:JSON.stringify(body)});
-  else await api('/api/students',{method:'POST',body:JSON.stringify(body)});
-  toast(id?'Student updated':'Student added');
-  closeModal('modal-student'); loadStudents();
+  const btn = document.querySelector('#student-form button[type="submit"]');
+  if(!btn) return;
+  const originalText = btn.textContent;
+  btn.disabled = true; btn.textContent = 'Saving…';
+
+  try {
+    const id = document.getElementById('s-id').value;
+    const body = {
+      name:document.getElementById('s-name').value,
+      email:document.getElementById('s-email').value,
+      roll_no:document.getElementById('s-roll').value,
+      reg_no:document.getElementById('s-reg').value,
+      phone:document.getElementById('s-phone')?.value || '',
+      batch:document.getElementById('s-batch').value,
+      password:document.getElementById('s-pwd').value,
+      hackerrank_username:document.getElementById('s-hr').value,
+      leetcode_username:document.getElementById('s-lc').value,
+    };
+    
+    const res = await api(id ? `/api/students/${id}` : '/api/students', {
+      method: id ? 'PUT' : 'POST',
+      body: JSON.stringify(body)
+    });
+
+    if (res.error) throw new Error(res.error);
+
+    toast(id ? 'Student updated' : 'Student added');
+    closeModal('modal-student'); 
+    loadStudents();
+  } catch (err) {
+    toast(err.message || 'Failed to save student', 'error');
+  } finally {
+    btn.disabled = false; btn.textContent = originalText;
+  }
 });
 
 // ── Assignments ──

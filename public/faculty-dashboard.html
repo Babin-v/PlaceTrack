@@ -58,8 +58,11 @@
     <div><h1>Students</h1><p>Manage enrolled students</p></div>
     <button class="btn btn-primary" onclick="openStudentModal()">+ Add Student</button>
   </div>
-  <div class="glass-card" style="margin-bottom:16px">
-    <input class="form-control" id="student-search" placeholder="🔍 Search students…" oninput="filterStudents()" style="max-width:320px"/>
+  <div class="glass-card" style="margin-bottom:16px;display:flex;gap:12px;flex-wrap:wrap">
+    <input class="form-control" id="student-search" placeholder="🔍 Search by name/roll…" oninput="filterStudents()" style="max-width:320px"/>
+    <select class="form-control" id="student-batch-filter" onchange="filterStudents()" style="max-width:200px">
+      <option value="">All Batches</option>
+    </select>
   </div>
   <div class="glass-card table-wrap"><table>
     <thead><tr><th>Roll No</th><th>Register No</th><th>Name</th><th>Batch</th><th>Email</th><th>HackerRank</th><th>LeetCode</th><th>Actions</th></tr></thead>
@@ -138,7 +141,9 @@
     <div class="form-row"><div class="form-group"><label>Register Number</label><input class="form-control" id="s-reg"/></div>
     <div class="form-group"><label>Email</label><input class="form-control" id="s-email" type="email"/></div></div>
     <div class="form-row"><div class="form-group"><label>Batch</label><input class="form-control" id="s-batch" placeholder="e.g. 2024-CSE-A"/></div>
-    <div class="form-group"><label>Password (default: student123)</label><input class="form-control" id="s-pwd" placeholder="Leave blank for default"/></div></div>
+    <div class="form-group"><label>Phone Number</label><input class="form-control" id="s-phone" placeholder="+91 …"/></div></div>
+    <div class="form-row"><div class="form-group"><label>Password (default: student123)</label><input class="form-control" id="s-pwd" type="password" placeholder="Leave blank for default"/></div>
+    <div class="form-group" style="visibility:hidden"></div></div>
     <div class="form-row"><div class="form-group"><label>HackerRank Username</label><input class="form-control" id="s-hr" placeholder="username"/></div>
     <div class="form-group"><label>LeetCode Username</label><input class="form-control" id="s-lc" placeholder="username"/></div></div>
     <div class="modal-footer"><button type="button" class="btn btn-ghost" onclick="closeModal('modal-student')">Cancel</button>

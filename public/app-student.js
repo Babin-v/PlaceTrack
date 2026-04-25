@@ -74,7 +74,7 @@ function renderMyAssignments() {
         </div>
         <div style="display:flex;gap:8px">
           ${a.external_url?`<a class="btn btn-ghost btn-sm" href="${a.external_url}" target="_blank">🔗 Open</a>`:''}
-          ${status==='pending'||status==='submitted'?`<button class="btn btn-primary btn-sm" onclick="openSubmit(${a.id},'${a.title}',${a.allow_upload})">📤 Submit</button>`:''}
+          ${status==='pending'||status==='submitted'?`<button class="btn btn-primary btn-sm" onclick="openSubmit(${a.id},'${a.title}',${a.allow_upload})">${status==='pending'?'📤 Submit':'🔄 Update'}</button>`:''}
         </div>
       </div>
     </div>`;
