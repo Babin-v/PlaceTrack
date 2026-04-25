@@ -137,16 +137,19 @@ document.getElementById('student-form')?.addEventListener('submit', async(e)=>{
 
 // ── Team / Faculty ──
 async function loadTeam() {
-  const team = await api('/api/faculty');
+  const res = await api('/api/faculty');
   const el = document.getElementById('team-body');
   if(!el) return;
-  el.innerHTML = team.map(f => `
+  if(res.error) { el.innerHTML = `<tr><td colspan="4" style="text-align:center;color:var(--danger)">${res.error}</td></tr>`; return; }
+  
+  const team = Array.isArray(res) ? res : [];
+  el.innerHTML = team.length ? team.map(f => `
     <tr>
       <td><strong>${f.name}</strong></td>
       <td>${f.email}</td>
       <td><span class="badge badge-primary">Faculty</span></td>
       <td>${fmtDate(f.created_at)}</td>
-    </tr>`).join('');
+    </tr>`).join('') : '<tr><td colspan="4" style="text-align:center">No other faculty members yet</td></tr>';
 }
 
 function openFacultyModal() {

@@ -137,7 +137,7 @@ async function bootstrap() {
 
   // ── FACULTY ────────────────────────────────────────────────────────────────
   app.get('/api/faculty', (req, res) =>
-    res.json(db.prepare(`SELECT id,name,email FROM users WHERE role='faculty'`).all()));
+    res.json(db.prepare(`SELECT id,name,email,created_at FROM users WHERE role='faculty'`).all()));
 
   app.post('/api/faculty', (req, res) => {
     const { name, email, password } = req.body;
