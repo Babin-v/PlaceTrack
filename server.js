@@ -18,7 +18,8 @@ io.on('connection', (socket) => {
   });
 });
 
-const uploadsDir = path.join(__dirname, 'uploads');
+const DB_DIR = process.env.RENDER_DISK_PATH || __dirname;
+const uploadsDir = path.join(DB_DIR, 'uploads');
 if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
 
 const storage = multer.diskStorage({

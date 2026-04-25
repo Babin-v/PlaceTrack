@@ -3,20 +3,17 @@ const initSqlJs = require('sql.js');
 const fs = require('fs');
 const path = require('path');
 
-// On Render, we use a persistent disk at /data/
-const REPO_DB = path.join(__dirname, 'placement.db');
+// On Render, we use a persistent disk at /opt/render/project/src/data/
 const DB_DIR = process.env.RENDER_DISK_PATH || __dirname;
 const DB_PATH = path.join(DB_DIR, 'placement.db');
+const REPO_DB = path.join(__dirname, 'placement.db');
 
-// Ensure the directory exists
+// Ensure directory exists
 if (!fs.existsSync(DB_DIR)) fs.mkdirSync(DB_DIR, { recursive: true });
 
-// Sync Logic: If we have a DB in the repo but not on the disk (or it's a first deploy), copy it
-if (fs.existsSync(REPO_DB) && DB_PATH !== REPO_DB) {
-  // Only copy if it doesn't exist on the disk yet to prevent overwriting live data every deploy
-  if (!fs.existsSync(DB_PATH)) {
-    fs.copyFileSync(REPO_DB, DB_PATH);
-  }
+// If the persistent file doesn't exist, try to copy it from the repository
+if (!fs.existsSync(DB_PATH) && fs.existsSync(REPO_DB)) {
+  fs.copyFileSync(REPO_DB, DB_PATH);
 }
 
 async function createDb() {
