@@ -132,7 +132,10 @@
 <div class="section" id="sec-team">
   <div class="page-header" style="display:flex;justify-content:space-between;align-items:flex-start">
     <div><h1>Faculty Team</h1><p>Manage faculty accounts</p></div>
-    <button class="btn btn-primary" onclick="openFacultyModal()">+ Add Faculty</button>
+    <div style="display:flex;gap:12px">
+      <a href="/api/admin/backup" class="btn btn-ghost" download>☁️ Cloud Sync (Download)</a>
+      <button class="btn btn-primary" onclick="openFacultyModal()">+ Add Faculty</button>
+    </div>
   </div>
   <div class="glass-card table-wrap"><table>
     <thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Created</th></tr></thead>

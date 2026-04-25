@@ -330,6 +330,10 @@ async function bootstrap() {
   });
 
   // ── START ──────────────────────────────────────────────────────────────────
+  app.get('/api/admin/backup', (req, res) => {
+    res.download(DB_PATH, 'placement.db');
+  });
+
   http.listen(PORT, () => {
     console.log(`\n🚀 PlaceTrack running at http://localhost:${PORT}`);
     console.log(`   Faculty → faculty@college.edu / faculty123`);
