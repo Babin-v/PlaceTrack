@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Faculty Dashboard — PlaceTrack</title>
+<link rel="stylesheet" href="style.css"/>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+<div class="app-layout">
+<!-- SIDEBAR -->
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-icon">🎓</div>
+    <h2>PlaceTrack</h2>
+    <p>Faculty Portal</p>
+  </div>
+  <div class="sidebar-user">
+    <div class="user-avatar" id="av">F</div>
+    <div class="user-info"><p id="uname">Faculty</p><span>Faculty</span></div>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="nav-section">Main</div>
+    <a class="nav-item active" onclick="showSection('overview')" href="#"><span>📊</span> Overview</a>
+    <a class="nav-item" onclick="showSection('students')" href="#"><span>👥</span> Students</a>
+    <a class="nav-item" onclick="showSection('assignments')" href="#"><span>📋</span> Assignments</a>
+    <a class="nav-item" onclick="showSection('submissions')" href="#"><span>📤</span> Submissions</a>
+    <a class="nav-item" onclick="showSection('progress')" href="#"><span>📈</span> Progress Charts</a>
+    <div class="nav-section">Communication</div>
+    <a class="nav-item" onclick="showSection('chat')" href="#" id="chat-nav"><span>💬</span> Chat <span class="badge" id="chat-badge" style="display:none">0</span></a>
+    <div class="nav-section">Reports</div>
+    <a class="nav-item" onclick="downloadCSV()" href="#"><span>📥</span> Download CSV</a>
+  </nav>
+  <div class="sidebar-footer">
+    <button class="btn-logout" onclick="logout()">🚪 Sign Out</button>
+  </div>
+</aside>
+
+<!-- MAIN -->
+<main class="main-content">
+
+<!-- OVERVIEW -->
+<div class="section active" id="sec-overview">
+  <div class="page-header">
+    <h1>Overview</h1><p>Placement training summary at a glance</p>
+  </div>
+  <div class="stats-grid" id="stats-grid"></div>
+  <div class="charts-grid">
+    <div class="chart-card"><h3>📊 Class Score Distribution</h3><canvas id="chart-scores"></canvas></div>
+    <div class="chart-card"><h3>🍩 Submission Status</h3><canvas id="chart-status"></canvas></div>
+    <div class="chart-card chart-full"><h3>📈 Assignment-wise Average</h3><canvas id="chart-avg"></canvas></div>
+  </div>
+</div>
+
+<!-- STUDENTS -->
+<div class="section" id="sec-students">
+  <div class="page-header" style="display:flex;justify-content:space-between;align-items:flex-start">
+    <div><h1>Students</h1><p>Manage enrolled students</p></div>
+    <button class="btn btn-primary" onclick="openStudentModal()">+ Add Student</button>
+  </div>
+  <div class="glass-card" style="margin-bottom:16px">
+    <input class="form-control" id="student-search" placeholder="🔍 Search students…" oninput="filterStudents()" style="max-width:320px"/>
+  </div>
+  <div class="glass-card table-wrap"><table>
+    <thead><tr><th>Roll No</th><th>Register No</th><th>Name</th><th>Batch</th><th>Email</th><th>HackerRank</th><th>LeetCode</th><th>Actions</th></tr></thead>
+    <tbody id="students-body"></tbody>
+  </table></div>
+</div>
+
+<!-- ASSIGNMENTS -->
+<div class="section" id="sec-assignments">
+  <div class="page-header" style="display:flex;justify-content:space-between;align-items:flex-start">
+    <div><h1>Assignments</h1><p>Create & manage tasks</p></div>
+    <button class="btn btn-primary" onclick="openAssignModal()">+ New Assignment</button>
+  </div>
+  <div id="assignments-list"></div>
+</div>
+
+<!-- SUBMISSIONS -->
+<div class="section" id="sec-submissions">
+  <div class="page-header"><h1>Submissions</h1><p>View & grade student submissions</p></div>
+  <div class="glass-card" style="margin-bottom:16px;display:flex;gap:12px;flex-wrap:wrap">
+    <select class="form-control" id="sub-filter-assign" onchange="loadSubmissions()" style="max-width:260px">
+      <option value="">All Assignments</option>
+    </select>
+    <select class="form-control" id="sub-filter-status" onchange="loadSubmissions()" style="max-width:180px">
+      <option value="">All Status</option>
+      <option value="pending">Pending</option>
+      <option value="submitted">Submitted</option>
+      <option value="graded">Graded</option>
+    </select>
+  </div>
+  <div class="glass-card table-wrap"><table>
+    <thead><tr><th>Student</th><th>Roll No</th><th>Assignment</th><th>Status</th><th>Marks</th><th>File</th><th>Submitted</th><th>Actions</th></tr></thead>
+    <tbody id="submissions-body"></tbody>
+  </table></div>
+</div>
+
+<!-- PROGRESS -->
+<div class="section" id="sec-progress">
+  <div class="page-header"><h1>Progress Charts</h1><p>Individual & batch performance</p></div>
+  <div class="glass-card" style="margin-bottom:20px;display:flex;gap:12px">
+    <select class="form-control" id="prog-student" onchange="loadStudentProgress()" style="max-width:260px">
+      <option value="">Select Student…</option>
+    </select>
+  </div>
+  <div class="charts-grid">
+    <div class="chart-card chart-full"><h3>📈 Student Score Trend</h3><canvas id="chart-student-trend"></canvas></div>
+    <div class="chart-card"><h3>🏆 Top Performers</h3><canvas id="chart-top"></canvas></div>
+    <div class="chart-card"><h3>📉 Score Range Breakdown</h3><canvas id="chart-range"></canvas></div>
+  </div>
+</div>
+
+<!-- CHAT -->
+<div class="section" id="sec-chat">
+  <div class="page-header"><h1>Chat</h1><p>Private messages with students</p></div>
+  <div class="chat-layout">
+    <div class="chat-list">
+      <div class="chat-list-header">💬 Conversations</div>
+      <div id="chat-threads-faculty"></div>
+    </div>
+    <div class="chat-window" id="chat-window-faculty">
+      <div class="chat-empty"><div style="font-size:48px">💬</div><p>Select a student to start chatting</p></div>
+    </div>
+  </div>
+</div>
+
+</main></div>
+
+<!-- STUDENT MODAL -->
+<div class="modal-overlay" id="modal-student">
+<div class="modal">
+  <div class="modal-header"><h3 id="student-modal-title">Add Student</h3><button class="modal-close" onclick="closeModal('modal-student')">✕</button></div>
+  <form id="student-form">
+    <input type="hidden" id="s-id"/>
+    <div class="form-row"><div class="form-group"><label>Full Name*</label><input class="form-control" id="s-name" required/></div>
+    <div class="form-group"><label>Roll No (Login ID)*</label><input class="form-control" id="s-roll" required/></div></div>
+    <div class="form-row"><div class="form-group"><label>Register Number</label><input class="form-control" id="s-reg"/></div>
+    <div class="form-group"><label>Email</label><input class="form-control" id="s-email" type="email"/></div></div>
+    <div class="form-row"><div class="form-group"><label>Batch</label><input class="form-control" id="s-batch" placeholder="e.g. 2024-CSE-A"/></div>
+    <div class="form-group"><label>Password (default: student123)</label><input class="form-control" id="s-pwd" placeholder="Leave blank for default"/></div></div>
+    <div class="form-row"><div class="form-group"><label>HackerRank Username</label><input class="form-control" id="s-hr" placeholder="username"/></div>
+    <div class="form-group"><label>LeetCode Username</label><input class="form-control" id="s-lc" placeholder="username"/></div></div>
+    <div class="modal-footer"><button type="button" class="btn btn-ghost" onclick="closeModal('modal-student')">Cancel</button>
+    <button type="submit" class="btn btn-primary">Save Student</button></div>
+  </form>
+</div></div>
+
+<!-- ASSIGNMENT MODAL -->
+<div class="modal-overlay" id="modal-assign">
+<div class="modal modal-lg">
+  <div class="modal-header"><h3 id="assign-modal-title">New Assignment</h3><button class="modal-close" onclick="closeModal('modal-assign')">✕</button></div>
+  <form id="assign-form">
+    <input type="hidden" id="a-id"/>
+    <div class="form-group"><label>Title*</label><input class="form-control" id="a-title" required/></div>
+    <div class="form-group"><label>Description</label><textarea class="form-control" id="a-desc" rows="2"></textarea></div>
+    <div class="form-row">
+      <div class="form-group"><label>Platform</label>
+        <select class="form-control" id="a-platform" onchange="togglePlatformFields()">
+          <option value="Manual">Manual / Upload</option>
+          <option value="HackerRank">HackerRank</option>
+          <option value="LeetCode">LeetCode</option>
+          <option value="Other">Other</option>
+        </select></div>
+      <div class="form-group"><label>Assign To (Batch)</label>
+        <input class="form-control" id="a-batch" placeholder="all / 2024-CSE-A" value="all"/></div>
+    </div>
+    <div id="hr-fields" style="display:none">
+      <div class="form-row">
+        <div class="form-group"><label>HackerRank Contest Slug</label><input class="form-control" id="a-slug" placeholder="my-contest-2024"/></div>
+        <div class="form-group"><label>Contest URL</label><input class="form-control" id="a-url" placeholder="https://hackerrank.com/contests/…"/></div>
+      </div>
+    </div>
+    <div id="other-url-field" style="display:none">
+      <div class="form-group"><label>External URL</label><input class="form-control" id="a-url2"/></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>Due Date</label><input class="form-control" id="a-due" type="date"/></div>
+      <div class="form-group"><label>Max Marks</label><input class="form-control" id="a-marks" type="number" value="100"/></div>
+    </div>
+    <div class="form-group" style="display:flex;align-items:center;gap:10px">
+      <input type="checkbox" id="a-upload" checked style="width:16px;height:16px;accent-color:var(--primary)"/>
+      <label style="margin:0;font-size:13px">Allow document upload from students</label>
+    </div>
+    <div class="modal-footer"><button type="button" class="btn btn-ghost" onclick="closeModal('modal-assign')">Cancel</button>
+    <button type="submit" class="btn btn-primary">Save Assignment</button></div>
+  </form>
+</div></div>
+
+<!-- GRADE MODAL -->
+<div class="modal-overlay" id="modal-grade">
+<div class="modal">
+  <div class="modal-header"><h3>Grade Submission</h3><button class="modal-close" onclick="closeModal('modal-grade')">✕</button></div>
+  <div id="grade-info" style="margin-bottom:16px;font-size:13px;color:var(--text-muted)"></div>
+  <input type="hidden" id="g-sub-id"/>
+  <div class="form-group"><label>Marks</label><input class="form-control" id="g-marks" type="number" min="0"/></div>
+  <div class="form-group"><label>Notes / Feedback</label><textarea class="form-control" id="g-notes" rows="3"></textarea></div>
+  <div class="modal-footer"><button class="btn btn-ghost" onclick="closeModal('modal-grade')">Cancel</button>
+  <button class="btn btn-success" onclick="saveGrade()">✓ Save Grade</button></div>
+</div></div>
+
+<div class="toast-container" id="toasts"></div>
+<script src="app-core.js"></script>
+<script src="app-faculty.js"></script>
+<script src="app-chat.js"></script>
+<script>initFaculty();</script>
+</body></html>
