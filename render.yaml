@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: placetrack
+    runtime: node
+    plan: free
+    buildCommand: npm install
+    startCommand: node server.js
+    envVars:
+      - key: RENDER_DISK_PATH
+        value: /opt/render/project/src/data
+    disk:
+      name: db-disk
+      mountPath: /opt/render/project/src/data
+      sizeGB: 1
