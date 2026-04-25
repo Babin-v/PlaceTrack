@@ -7,7 +7,16 @@ const fs = require('fs');
 const { createDb } = require('./db');
 
 const app = express();
-const PORT = 3000;
+const http = require('http').Server(app);
+const io = require('socket.io')(http);
+const PORT = process.env.PORT || 3000;
+
+// Socket.io logic
+io.on('connection', (socket) => {
+  socket.on('join', (userId) => {
+    socket.join(`user_${userId}`);
+  });
+});
 
 const uploadsDir = path.join(__dirname, 'uploads');
 if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
@@ -281,6 +290,10 @@ async function bootstrap() {
     if (!content?.trim()) return res.status(400).json({ error:'Empty message' });
     const r = db.prepare(`INSERT INTO messages (sender_id,receiver_id,content) VALUES (?,?,?)`).run(Number(sender_id),Number(receiver_id),content.trim());
     const msg = db.prepare(`SELECT m.*,u.name as sender_name,u.role as sender_role FROM messages m JOIN users u ON m.sender_id=u.id WHERE m.id=?`).get(r.lastInsertRowid);
+    
+    // Emit real-time message
+    io.to(`user_${receiver_id}`).emit('new_message', msg);
+    
     res.json(msg);
   });
 
@@ -294,6 +307,10 @@ async function bootstrap() {
       .run(Number(sender_id), Number(receiver_id), content || null, file_name, file_path, is_voice === 'true' ? 1 : 0);
       
     const msg = db.prepare(`SELECT m.*,u.name as sender_name,u.role as sender_role FROM messages m JOIN users u ON m.sender_id=u.id WHERE m.id=?`).get(r.lastInsertRowid);
+    
+    // Emit real-time message/file/voice
+    io.to(`user_${receiver_id}`).emit('new_message', msg);
+    
     res.json(msg);
   });
 
@@ -303,7 +320,7 @@ async function bootstrap() {
   });
 
   // ── START ──────────────────────────────────────────────────────────────────
-  app.listen(PORT, () => {
+  http.listen(PORT, () => {
     console.log(`\n🚀 PlaceTrack running at http://localhost:${PORT}`);
     console.log(`   Faculty → faculty@college.edu / faculty123`);
     console.log(`   Student → arjun@student.edu  / student123\n`);

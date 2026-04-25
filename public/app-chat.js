@@ -1,10 +1,31 @@
 // ── Chat (shared faculty + student) ──────────────────────────────────────────
 let activeChatUserId = null;
-let chatPollTimer = null;
 let mediaRecorder = null;
 let audioChunks = [];
+let socket = null;
+
+function initSocket() {
+  if (socket) return;
+  socket = io();
+  socket.emit('join', currentUser.id);
+  
+  socket.on('new_message', async (msg) => {
+    // If the message is from the user we are currently chatting with, show it
+    if (activeChatUserId === msg.sender_id) {
+      appendMessage(msg);
+      // Mark as read immediately since we are looking at it
+      await api(`/api/chat/messages/${currentUser.id}/${msg.sender_id}`);
+    } else {
+      // Otherwise just update the side list and unread badge
+      if (currentUser.role === 'faculty') loadFacultyChat();
+      else loadStudentChat();
+      updateUnreadBadge();
+    }
+  });
+}
 
 async function openChatSection() {
+  initSocket();
   if (currentUser.role === 'faculty') await loadFacultyChat();
   else await loadStudentChat();
 }
@@ -36,13 +57,11 @@ async function loadFacultyChat() {
 
 async function openFacultyChat(userId, userName) {
   activeChatUserId = userId;
-  clearInterval(chatPollTimer);
   await loadFacultyChat(); 
 
   const win = document.getElementById('chat-window-faculty');
   win.innerHTML = renderChatWindow(userId, userName, 'Student');
   await fetchMessages(userId);
-  chatPollTimer = setInterval(()=>fetchMessages(userId), 4000);
 }
 
 // ── STUDENT CHAT ──────────────────────────────────────────────────────────────
@@ -74,13 +93,11 @@ async function loadStudentChat() {
 
 async function openStudentChat(userId, userName) {
   activeChatUserId = userId;
-  clearInterval(chatPollTimer);
   await loadStudentChat();
 
   const win = document.getElementById('chat-window-student');
   win.innerHTML = renderChatWindow(userId, userName, 'Faculty');
   await fetchMessages(userId);
-  chatPollTimer = setInterval(()=>fetchMessages(userId), 4000);
 }
 
 // ── UI Components ─────────────────────────────────────────────────────────────
@@ -130,11 +147,43 @@ async function fetchMessages(otherId) {
     el.innerHTML = html;
     el.scrollTop = el.scrollHeight;
   }
+  updateUnreadBadge();
+}
 
+function appendMessage(m) {
+  const el = document.getElementById('chat-msgs');
+  if (!el) return;
+  
+  const mine = m.sender_id === currentUser.id;
+  const time = new Date(m.created_at).toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});
+  
+  let content = `<p>${m.content || ''}</p>`;
+  if (m.is_voice) {
+    content = `<div class="voice-msg"><audio src="${m.file_path}" controls autoplay></audio></div>`;
+  } else if (m.file_name) {
+    content = `<div class="file-msg"><a href="${m.file_path}" target="_blank" style="color:${mine?'white':'var(--primary)'}">📎 ${m.file_name}</a></div>` + (m.content ? `<p>${m.content}</p>` : '');
+  }
+
+  const msgDiv = document.createElement('div');
+  msgDiv.className = `chat-msg ${mine?'mine':''}`;
+  msgDiv.innerHTML = `
+    <div class="chat-msg-avatar" style="${mine?'background:var(--primary)':''}">${m.sender_name[0]}</div>
+    <div class="chat-msg-body">
+      ${content}
+      <time>${mine?'You':m.sender_name.split(' ')[0]} · ${time}</time>
+    </div>`;
+  
+  el.appendChild(msgDiv);
+  el.scrollTop = el.scrollHeight;
+}
+
+async function updateUnreadBadge() {
   const r = await api(`/api/chat/unread/${currentUser.id}`);
   const badge = document.getElementById('chat-badge');
-  if (r.unread > 0) { badge.style.display='inline'; badge.textContent=r.unread; }
-  else badge.style.display='none';
+  if (badge) {
+    if (r.unread > 0) { badge.style.display='inline'; badge.textContent=r.unread; }
+    else badge.style.display='none';
+  }
 }
 
 async function sendMsg(receiverId) {
@@ -142,8 +191,8 @@ async function sendMsg(receiverId) {
   const content = inp?.value?.trim();
   if (!content) return;
   inp.value = '';
-  await api('/api/chat/messages', { method:'POST', body: JSON.stringify({ sender_id: currentUser.id, receiver_id: receiverId, content }) });
-  await fetchMessages(receiverId);
+  const msg = await api('/api/chat/messages', { method:'POST', body: JSON.stringify({ sender_id: currentUser.id, receiver_id: receiverId, content }) });
+  appendMessage(msg);
 }
 
 async function sendFile(receiverId) {
@@ -156,9 +205,9 @@ async function sendFile(receiverId) {
   fd.append('file', file);
   fd.append('is_voice', 'false');
   
-  await fetch('/api/chat/upload', { method: 'POST', body: fd });
+  const msg = await fetch('/api/chat/upload', { method: 'POST', body: fd }).then(r=>r.json());
   input.value = '';
-  await fetchMessages(receiverId);
+  appendMessage(msg);
 }
 
 // ── Voice Recording ───────────────────────────────────────────────────────────
@@ -196,8 +245,8 @@ async function stopRecording(receiverId) {
     fd.append('file', audioBlob, 'voice_message.webm');
     fd.append('is_voice', 'true');
     
-    await fetch('/api/chat/upload', { method: 'POST', body: fd });
-    await fetchMessages(receiverId);
+    const msg = await fetch('/api/chat/upload', { method: 'POST', body: fd }).then(r=>r.json());
+    appendMessage(msg);
     
     mediaRecorder.stream.getTracks().forEach(t => t.stop());
   };
