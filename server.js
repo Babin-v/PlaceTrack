@@ -19,6 +19,7 @@ io.on('connection', (socket) => {
 });
 
 const DB_DIR = process.env.RENDER_DISK_PATH || __dirname;
+const DB_PATH = path.join(DB_DIR, 'placement.db');
 const uploadsDir = path.join(DB_DIR, 'uploads');
 if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
 
